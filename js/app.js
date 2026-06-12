@@ -94,9 +94,54 @@ function updateStats() {
   if (fillEl) setTimeout(() => { fillEl.style.width = rate + '%'; }, 200);
 }
 
+/* ========== UTILIDAD: MAPA MÓVIL ========== */
+// En móvil los mapas capturan el scroll táctil por defecto.
+// Solución: desactivar dragging/touch hasta que el usuario toque el overlay.
+function isMobile() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function addMapOverlay(mapEl, map, onActivate) {
+  if (!isMobile()) return; // En escritorio no se necesita
+
+  const overlay = document.createElement('div');
+  overlay.className = 'map-touch-overlay';
+  overlay.innerHTML = `<div class="map-touch-msg"><span class="map-touch-icon">👆</span><span>Toca para interactuar con el mapa</span></div>`;
+  mapEl.style.position = 'relative';
+  mapEl.appendChild(overlay);
+
+  // Deshabilitar interacción hasta activar
+  map.dragging.disable();
+  map.touchZoom.disable();
+  map.scrollWheelZoom.disable();
+  map.doubleClickZoom.disable();
+
+  overlay.addEventListener('click', () => {
+    overlay.remove();
+    map.dragging.enable();
+    map.touchZoom.enable();
+    map.scrollWheelZoom.disable(); // wheel siempre off
+    if (onActivate) onActivate();
+
+    // Botón para desactivar el mapa y volver al scroll
+    const exitBtn = document.createElement('button');
+    exitBtn.className = 'map-exit-btn';
+    exitBtn.textContent = '✕ Salir del mapa';
+    mapEl.appendChild(exitBtn);
+    exitBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      map.dragging.disable();
+      map.touchZoom.disable();
+      exitBtn.remove();
+      // Volver a poner el overlay
+      addMapOverlay(mapEl, map, onActivate);
+    });
+  }, { once: true });
+}
+
 /* ========== MAPA DEL FORMULARIO ========== */
 function initReportMap() {
-  reportMap = L.map('reportMap').setView([11.5444, -72.9072], 13);
+  reportMap = L.map('reportMap', { scrollWheelZoom: false }).setView([11.5444, -72.9072], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
@@ -110,7 +155,6 @@ function initReportMap() {
     reportMarker.bindPopup('📍 Ubicación seleccionada').openPopup();
     document.getElementById('mapCoords').textContent =
       `📍 Coordenadas: ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
-    // Reverse geocoding with Nominatim
     fetch(`https://nominatim.openstreetmap.org/reverse?lat=${selectedLat}&lon=${selectedLng}&format=json`)
       .then(r => r.json())
       .then(data => {
@@ -121,15 +165,18 @@ function initReportMap() {
         }
       }).catch(() => {});
   });
+
+  addMapOverlay(document.getElementById('reportMap'), reportMap);
 }
 
 /* ========== MAPA PRINCIPAL ========== */
 function initMainMap() {
-  mainMap = L.map('mainMap').setView([11.5444, -72.9072], 13);
+  mainMap = L.map('mainMap', { scrollWheelZoom: false }).setView([11.5444, -72.9072], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap', maxZoom: 19,
   }).addTo(mainMap);
   loadMainMapMarkers();
+  addMapOverlay(document.getElementById('mainMap'), mainMap);
 }
 
 function loadMainMapMarkers() {
