@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoReport — Reporta Residuos en tu Ciudad</title>
+  <meta name="description" content="Plataforma ciudadana para reportar basura y residuos en espacios públicos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="mainNav">
+    <div class="nav__inner">
+      <a href="#" class="nav__logo">
+        <span class="nav__logo-icon">🌿</span>
+        <span class="nav__logo-text">EcoReport</span>
+      </a>
+      <div class="nav__links">
+        <a href="#reportar" class="nav__link">Reportar</a>
+        <a href="#mapa" class="nav__link">Mapa</a>
+        <a href="#estadisticas" class="nav__link">Estadísticas</a>
+        <button class="btn btn--outline btn--sm" onclick="openAdmin()">Panel Admin</button>
+      </div>
+      <button class="nav__hamburger" id="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav__mobile" id="mobileMenu">
+      <a href="#reportar" class="nav__mobile-link" onclick="closeMobile()">Reportar</a>
+      <a href="#mapa" class="nav__mobile-link" onclick="closeMobile()">Mapa</a>
+      <a href="#estadisticas" class="nav__mobile-link" onclick="closeMobile()">Estadísticas</a>
+      <button class="btn btn--outline btn--sm" onclick="openAdmin(); closeMobile()">Panel Admin</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="hero__bg-dots"></div>
+    <div class="hero__content">
+      <div class="hero__badge">🌎 Ciudadanía activa</div>
+      <h1 class="hero__title">Tu ciudad más limpia,<br/><span class="hero__title-accent">empieza con tus reportes</span></h1>
+      <p class="hero__subtitle">Fotografía, ubica y reporta residuos en espacios públicos. Nosotros nos encargamos de que llegue a quien corresponde.</p>
+      <div class="hero__cta">
+        <a href="#reportar" class="btn btn--primary btn--lg">Hacer un reporte</a>
+        <a href="#mapa" class="btn btn--ghost btn--lg">Ver el mapa</a>
+      </div>
+      <div class="hero__stats" id="heroStats">
+        <div class="hero__stat">
+          <span class="hero__stat-num" id="statTotal">0</span>
+          <span class="hero__stat-label">Reportes totales</span>
+        </div>
+        <div class="hero__stat-divider"></div>
+        <div class="hero__stat">
+          <span class="hero__stat-num" id="statResolved">0</span>
+          <span class="hero__stat-label">Resueltos</span>
+        </div>
+        <div class="hero__stat-divider"></div>
+        <div class="hero__stat">
+          <span class="hero__stat-num" id="statPending">0</span>
+          <span class="hero__stat-label">Pendientes</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <div class="hero__map-preview" id="heroMapPreview"></div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how">
+    <div class="container">
+      <h2 class="section-title">¿Cómo funciona?</h2>
+      <div class="how__steps">
+        <div class="how__step">
+          <div class="how__step-num">01</div>
+          <div class="how__step-icon">📸</div>
+          <h3>Fotografía el problema</h3>
+          <p>Toma una foto del lugar afectado por residuos o desechos.</p>
+        </div>
+        <div class="how__step-arrow">→</div>
+        <div class="how__step">
+          <div class="how__step-num">02</div>
+          <div class="how__step-icon">📍</div>
+          <h3>Ubica en el mapa</h3>
+          <p>Señala la ubicación exacta en el mapa interactivo.</p>
+        </div>
+        <div class="how__step-arrow">→</div>
+        <div class="how__step">
+          <div class="how__step-num">03</div>
+          <div class="how__step-icon">📨</div>
+          <h3>Envía el reporte</h3>
+          <p>El reporte llega automáticamente a la empresa de aseo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMULARIO -->
+  <section class="report-section" id="reportar">
+    <div class="container">
+      <div class="report-section__header">
+        <h2 class="section-title">Hacer un reporte</h2>
+        <p class="section-subtitle">Completa el formulario y contribuye a mantener limpia tu ciudad.</p>
+      </div>
+      <div class="report-layout">
+        <div class="report-form-card">
+          <form id="reportForm" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ciudadanoNombre">Nombre completo <span class="required">*</span></label>
+                <input type="text" id="ciudadanoNombre" name="nombre" class="form-input" placeholder="Tu nombre" required maxlength="100" />
+                <span class="form-error" id="err-nombre"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ciudadanoEmail">Correo electrónico <span class="optional">(opcional)</span></label>
+                <input type="email" id="ciudadanoEmail" name="email" class="form-input" placeholder="tu@correo.com" maxlength="150" />
+                <span class="form-error" id="err-email"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ubicacion">Dirección o ubicación <span class="required">*</span></label>
+              <input type="text" id="ubicacion" name="ubicacion" class="form-input" placeholder="Ej: Calle 15 con Carrera 8, Parque Central..." required maxlength="200" />
+              <span class="form-error" id="err-ubicacion"></span>
+              <p class="form-hint">💡 También puedes hacer clic en el mapa de abajo para seleccionar la ubicación exacta.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="descripcion">Descripción del problema <span class="required">*</span></label>
+              <textarea id="descripcion" name="descripcion" class="form-textarea" rows="4" placeholder="Describe el tipo de residuo, cantidad aproximada, condición del lugar..." required maxlength="500"></textarea>
+              <div class="char-count"><span id="charCount">0</span>/500</div>
+              <span class="form-error" id="err-descripcion"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Fotografía del lugar</label>
+              <div class="upload-zone" id="uploadZone">
+                <input type="file" id="imagenInput" name="imagen" accept=".jpg,.jpeg,.png" class="upload-input" />
+                <div class="upload-placeholder" id="uploadPlaceholder">
+                  <div class="upload-icon">📷</div>
+                  <p class="upload-text">Arrastra una imagen aquí o <span class="upload-link">haz clic para subir</span></p>
+                  <p class="upload-hint">PNG, JPG, JPEG — máximo 5 MB</p>
+                </div>
+                <div class="upload-preview" id="uploadPreview" style="display:none;">
+                  <img id="previewImg" src="" alt="Vista previa" />
+                  <button type="button" class="upload-remove" id="removeImage">✕ Quitar imagen</button>
+                </div>
+              </div>
+              <span class="form-error" id="err-imagen"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ubicación en el mapa</label>
+              <div id="reportMap" class="report-map"></div>
+              <p class="form-hint" id="mapCoords">Haz clic en el mapa para marcar la ubicación exacta</p>
+            </div>
+
+            <div class="form-footer">
+              <div class="form-datetime">
+                <span class="form-datetime-icon">🕐</span>
+                <span id="fechaHoraDisplay">Fecha y hora: cargando...</span>
+              </div>
+              <button type="submit" class="btn btn--primary btn--lg btn--full" id="submitBtn">
+                <span class="btn-text">Enviar reporte</span>
+                <span class="btn-spinner" style="display:none;">⏳</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAPA GENERAL -->
+  <section class="map-section" id="mapa">
+    <div class="container">
+      <h2 class="section-title">Mapa de reportes</h2>
+      <p class="section-subtitle">Visualiza todos los reportes registrados en tu ciudad.</p>
+      <div class="map-legend">
+        <span class="legend-item legend-item--pending">● Pendiente</span>
+        <span class="legend-item legend-item--process">● En proceso</span>
+        <span class="legend-item legend-item--resolved">● Resuelto</span>
+      </div>
+      <div id="mainMap" class="main-map"></div>
+    </div>
+  </section>
+
+  <!-- ESTADÍSTICAS -->
+  <section class="stats-section" id="estadisticas">
+    <div class="container">
+      <h2 class="section-title">Estadísticas</h2>
+      <div class="stats-grid">
+        <div class="stat-card stat-card--total">
+          <div class="stat-card__icon">📊</div>
+          <div class="stat-card__num" id="stTotal">0</div>
+          <div class="stat-card__label">Reportes recibidos</div>
+        </div>
+        <div class="stat-card stat-card--pending">
+          <div class="stat-card__icon">⏳</div>
+          <div class="stat-card__num" id="stPending">0</div>
+          <div class="stat-card__label">Pendientes</div>
+        </div>
+        <div class="stat-card stat-card--process">
+          <div class="stat-card__icon">🔧</div>
+          <div class="stat-card__num" id="stProcess">0</div>
+          <div class="stat-card__label">En proceso</div>
+        </div>
+        <div class="stat-card stat-card--resolved">
+          <div class="stat-card__icon">✅</div>
+          <div class="stat-card__num" id="stResolved">0</div>
+          <div class="stat-card__label">Resueltos</div>
+        </div>
+      </div>
+      <div class="progress-bar-section">
+        <div class="progress-label">
+          <span>Tasa de resolución</span>
+          <span id="resolutionRate">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <div class="footer__logo">🌿 EcoReport</div>
+          <p class="footer__desc">Plataforma ciudadana para reportar residuos en espacios públicos y contribuir a una ciudad más limpia.</p>
+        </div>
+        <div>
+          <h4 class="footer__heading">Accesos</h4>
+          <ul class="footer__list">
+            <li><a href="#reportar">Hacer un reporte</a></li>
+            <li><a href="#mapa">Ver el mapa</a></li>
+            <li><a href="#estadisticas">Estadísticas</a></li>
+            <li><a href="#" onclick="openAdmin()">Panel administrativo</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer__heading">Contacto</h4>
+          <p class="footer__contact">📧 aseo@ciudad.gov.co</p>
+          <p class="footer__contact">📞 línea ambiental: 01 8000 XXX XXX</p>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>© 2025 EcoReport — Construido para ciudadanos, por ciudadanos.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL DE ÉXITO -->
+  <div class="modal-overlay" id="successModal" style="display:none;">
+    <div class="modal">
+      <div class="modal__icon">🎉</div>
+      <h2 class="modal__title">¡Reporte enviado!</h2>
+      <p class="modal__text">Tu reporte ha sido registrado exitosamente. La empresa de aseo ha sido notificada y recibirás actualizaciones del estado.</p>
+      <p class="modal__id">ID de tu reporte: <strong id="reportIdDisplay"></strong></p>
+      <button class="btn btn--primary" onclick="closeSuccess()">Aceptar</button>
+    </div>
+  </div>
+
+  <!-- PANEL ADMIN -->
+  <div class="admin-overlay" id="adminPanel" style="display:none;">
+    <div class="admin">
+      <div class="admin__header">
+        <div class="admin__title-row">
+          <h2 class="admin__title">🗂️ Panel Administrativo</h2>
+          <button class="admin__close" onclick="closeAdmin()">✕</button>
+        </div>
+        <div class="admin__filters">
+          <input type="text" class="form-input admin__search" id="adminSearch" placeholder="🔍 Buscar por ubicación..." />
+          <input type="date" class="form-input admin__date" id="adminDateFilter" />
+          <select class="form-input admin__status-filter" id="adminStatusFilter">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="resuelto">Resuelto</option>
+          </select>
+          <button class="btn btn--outline btn--sm" onclick="applyAdminFilters()">Filtrar</button>
+        </div>
+        <div class="admin__stats-row">
+          <span class="admin__stat-badge admin__stat-badge--total" id="adminTotal">Total: 0</span>
+          <span class="admin__stat-badge admin__stat-badge--pending" id="adminPendingCount">Pendientes: 0</span>
+          <span class="admin__stat-badge admin__stat-badge--process" id="adminProcessCount">En proceso: 0</span>
+          <span class="admin__stat-badge admin__stat-badge--resolved" id="adminResolvedCount">Resueltos: 0</span>
+        </div>
+      </div>
+      <div class="admin__body" id="adminBody">
+        <p class="admin__empty">No hay reportes aún.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
